@@ -1,8 +1,7 @@
-const passport = require('passport')
-const { Strategy } = require('passport-google-oauth20')
+const passport = require('./auth_routes/google.auth')
+const googleRouter = require('./auth_routes/google.router');
 const cookieSession = require('cookie-session')
 const path = require('path')
-const fs = require('fs')
 const express = require('express')
 
 const auth = express.Router()
@@ -10,24 +9,9 @@ const auth = express.Router()
 require('dotenv').config()
 
 const config = {
-    CLIENT_ID: process.env.CLIENT_ID,
-    CLIENT_SECRET: process.env.CLIENT_SECRET,
     COOKIE_KEY_1: process.env.COOKIE_KEY_1,
     COOKIE_KEY_2: process.env.COOKIE_KEY_2
 }
-
-const AUTH_OPTIONS = {
-    callbackURL: '/auth/google/callback',
-    clientID: config.CLIENT_ID,
-    clientSecret: config.CLIENT_SECRET
-}
-
-function verifyCallback(accessToken, refreshToken, profile, done) {
-    done(null, profile)
-}
-
-passport.use(new Strategy(AUTH_OPTIONS, verifyCallback))
-
 
 passport.serializeUser((user, done) => {
     done(null, user.id)
@@ -55,16 +39,7 @@ function checkLoggedIn(req, res, next) {
     next()
 }
 
-auth.get('/google', passport.authenticate('google', {
-    scope: ['email']
-}))
-
-auth.get('/google/callback', passport.authenticate('google', {
-    failureRedirect: '/failure',
-    successRedirect: '/auth',
-}), (req, res) => {
-})
-
+auth.use('/google', googleRouter)
 auth.get('/logout', (req, res) => {
     req.logOut()
     return res.redirect('/auth')
